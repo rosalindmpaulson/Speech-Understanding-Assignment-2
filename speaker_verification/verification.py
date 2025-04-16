@@ -23,7 +23,7 @@ def init_model(model_name, checkpoint=None):
         model = ECAPA_TDNN_SMALL(feat_dim=1024, feat_type='hubert_large_ll60k', config_path=config_path)
     elif model_name == 'wav2vec2_xlsr':
         config_path = None
-        model = ECAPA_TDNN_SMALL(feat_dim=1024, feat_type='wav2vec2_xlsr', config_path=config_path)
+        model = ECAPA_TDNN_SMALL(feat_dim=1024, feat_type='xlsr_53', config_path=config_path)
     else:
         model = ECAPA_TDNN_SMALL(feat_dim=40, feat_type='fbank')
 
@@ -49,9 +49,14 @@ def verification(model_name,  wav1, wav2, use_gpu=True, checkpoint=None):
     wav2 = resample2(wav2)
 
     if use_gpu:
-        model = model.cuda()
-        wav1 = wav1.cuda()
-        wav2 = wav2.cuda()
+        #model = model.cuda()
+        model = model.to(torch.device("cpu"))
+        # wav1 = wav1.cuda()
+        # wav2 = wav2.cuda()
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        wav1 = wav1.to(device)
+        wav2 = wav2.to(device)
+
 
     model.eval()
     with torch.no_grad():
@@ -60,6 +65,7 @@ def verification(model_name,  wav1, wav2, use_gpu=True, checkpoint=None):
 
     sim = F.cosine_similarity(emb1, emb2)
     print("The similarity score between two audios is {:.4f} (-1.0, 1.0).".format(sim[0].item()))
+    return sim[0].item()
 
 
 if __name__ == "__main__":
